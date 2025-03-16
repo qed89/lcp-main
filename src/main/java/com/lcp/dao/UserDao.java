@@ -26,7 +26,11 @@ public class UserDao {
 
         try {
             em.getTransaction().begin();
+
+            // Хешируем пароль перед сохранением
+            user.setPassword(BCrypt.hashpw(user.getPassword(), BCrypt.gensalt()));
             em.persist(user);
+
             em.getTransaction().commit();
         } catch (PersistenceException e) {
             if (em.getTransaction().isActive()) {
