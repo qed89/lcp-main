@@ -406,8 +406,56 @@ public class FormBuilderServlet extends HttpServlet {
 
 ## \src\main\java\com\lcp\controller\LoginServlet.java
 ```
+// package com.lcp.controller;
+
+// import com.lcp.dao.UserDao;
+// import com.lcp.model.User;
+
+// import jakarta.servlet.ServletException;
+// import jakarta.servlet.annotation.WebServlet;
+// import jakarta.servlet.http.HttpServlet;
+// import jakarta.servlet.http.HttpServletRequest;
+// import jakarta.servlet.http.HttpServletResponse;
+
+// import java.io.IOException;
+
+// @WebServlet("/login")
+// public class LoginServlet extends HttpServlet {
+//     private UserDao userDao = new UserDao();
+
+//     @Override
+//     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+//         String username = request.getParameter("username");
+//         String password = request.getParameter("password");
+    
+//         if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
+//             sendJsonErrorResponse(response, "Имя пользователя и пароль не могут быть пустыми.");
+//             return;
+//         }
+    
+//         try {
+//             User user = userDao.findByUsername(username);
+//             if (user != null && userDao.checkPassword(password, user.getPassword())) {
+//                 request.getSession().setAttribute("user", user);
+//                 response.sendRedirect("/menu");
+//             } else {
+//                 sendJsonErrorResponse(response, "Неверное имя пользователя или пароль.");
+//             }
+//         } catch (Exception e) {
+//             sendJsonErrorResponse(response, "Ошибка при входе: " + e.getMessage());
+//         }
+//     }
+    
+//     private void sendJsonErrorResponse(HttpServletResponse response, String message) throws IOException {
+//         response.setContentType("application/json");
+//         response.setCharacterEncoding("UTF-8");
+//         response.getWriter().write("{\"error\": \"" + message + "\"}");
+//     }
+// }
+
 package com.lcp.controller;
 
+import com.google.gson.Gson;
 import com.lcp.dao.UserDao;
 import com.lcp.model.User;
 
@@ -418,6 +466,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @WebServlet("/login")
 public class LoginServlet extends HttpServlet {
@@ -428,29 +478,28 @@ public class LoginServlet extends HttpServlet {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
 
-        System.out.println("ASE Username: " + username); // Логирование
+        Map<String, String> responseData = new HashMap<>();
 
         if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
-            sendErrorResponse(response, "Имя пользователя и пароль не могут быть пустыми.");
-            return;
-        }
-
-        try {
-            User user = userDao.findByUsername(username);
-            if (user != null && userDao.checkPassword(password, user.getPassword())) {
-                request.getSession().setAttribute("user", user);
-                response.sendRedirect("/menu");
-            } else {
-                sendErrorResponse(response, "Неверное имя пользователя или пароль.");
+            responseData.put("error", "Имя пользователя и пароль не могут быть пустыми.");
+        } else {
+            try {
+                User user = userDao.findByUsername(username);
+                if (user != null && userDao.checkPassword(password, user.getPassword())) {
+                    request.getSession().setAttribute("user", user);
+                    responseData.put("redirect", "/menu"); // Успешный вход, перенаправляем
+                } else {
+                    responseData.put("error", "Неверное имя пользователя или пароль.");
+                }
+            } catch (Exception e) {
+                responseData.put("error", "Ошибка при входе: " + e.getMessage());
             }
-        } catch (Exception e) {
-            sendErrorResponse(response, "Ошибка при входе: " + e.getMessage());
         }
-    }
 
-    private void sendErrorResponse(HttpServletResponse response, String message) throws IOException {
-        response.setContentType("text/html");
-        response.getWriter().write("<p style='color:red;'>" + message + "</p>");
+        // Отправляем JSON-ответ
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(new Gson().toJson(responseData));
     }
 }
 ```
@@ -524,21 +573,91 @@ public class MenuServlet extends HttpServlet {
 
 ## \src\main\java\com\lcp\controller\RegisterServlet.java
 ```
+// package com.lcp.controller;
+
+// import com.lcp.dao.UserDao;
+// import com.lcp.model.User;
+// import jakarta.servlet.ServletException;
+// import jakarta.servlet.annotation.WebServlet;
+// import jakarta.servlet.http.HttpServlet;
+// import jakarta.servlet.http.HttpServletRequest;
+// import jakarta.servlet.http.HttpServletResponse;
+// import jakarta.validation.ConstraintViolation;
+// import jakarta.validation.Validation;
+// import jakarta.validation.Validator;
+// import jakarta.validation.ValidatorFactory;
+
+// import java.io.IOException;
+// import java.util.Set;
+
+// @WebServlet("/register")
+// public class RegisterServlet extends HttpServlet {
+//     private UserDao userDao = new UserDao();
+
+//     @Override
+//     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+//         String username = request.getParameter("username");
+//         String password = request.getParameter("password");
+
+//         User user = new User();
+//         user.setUsername(username);
+//         user.setPassword(password);
+
+//         // Валидация
+//         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+//         Validator validator = factory.getValidator();
+//         Set<ConstraintViolation<User>> violations = validator.validate(user);
+
+//         if (!violations.isEmpty()) {
+//             StringBuilder errors = new StringBuilder();
+//             for (ConstraintViolation<User> violation : violations) {
+//                 errors.append(violation.getMessage()).append("<br>");
+//             }
+//             sendJsonErrorResponse(response, errors.toString());
+//             return;
+//         }
+
+//         // Проверка уникальности имени пользователя
+//         if (userDao.findByUsername(username) != null) {
+//             sendJsonErrorResponse(response, "Пользователь с таким именем уже существует.");
+//             return;
+//         }
+
+//         try {
+//             userDao.save(user);
+//             response.sendRedirect("index.html");
+//         } catch (Exception e) {
+//             sendJsonErrorResponse(response, "Ошибка при регистрации: " + e.getMessage());
+//         }
+//     }
+
+//     private void sendJsonErrorResponse(HttpServletResponse response, String message) throws IOException {
+//         response.setContentType("application/json");
+//         response.setCharacterEncoding("UTF-8");
+//         response.getWriter().write("{\"error\": \"" + message + "\"}");
+//     }
+// }
+
 package com.lcp.controller;
 
+import com.google.gson.Gson;
 import com.lcp.dao.UserDao;
 import com.lcp.model.User;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 @WebServlet("/register")
@@ -549,6 +668,8 @@ public class RegisterServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
+
+        Map<String, String> responseData = new HashMap<>();
 
         User user = new User();
         user.setUsername(username);
@@ -564,27 +685,22 @@ public class RegisterServlet extends HttpServlet {
             for (ConstraintViolation<User> violation : violations) {
                 errors.append(violation.getMessage()).append("<br>");
             }
-            sendErrorResponse(response, errors.toString());
-            return;
+            responseData.put("error", errors.toString());
+        } else if (userDao.findByUsername(username) != null) {
+            responseData.put("error", "Пользователь с таким именем уже существует.");
+        } else {
+            try {
+                userDao.save(user);
+                responseData.put("redirect", "/index.html"); // Успешная регистрация, перенаправляем
+            } catch (Exception e) {
+                responseData.put("error", "Ошибка при регистрации: " + e.getMessage());
+            }
         }
 
-        // Проверка уникальности имени пользователя
-        if (userDao.findByUsername(username) != null) {
-            sendErrorResponse(response, "Пользователь с таким именем уже существует.");
-            return;
-        }
-
-        try {
-            userDao.save(user);
-            response.sendRedirect("index.html");
-        } catch (Exception e) {
-            sendErrorResponse(response, "Ошибка при регистрации: " + e.getMessage());
-        }
-    }
-
-    private void sendErrorResponse(HttpServletResponse response, String message) throws IOException {
-        response.setContentType("text/html");
-        response.getWriter().write("<p style='color:red;'>" + message + "</p>");
+        // Отправляем JSON-ответ
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(new Gson().toJson(responseData));
     }
 }
 ```
@@ -878,7 +994,11 @@ public class UserDao {
 
         try {
             em.getTransaction().begin();
+
+            // Хешируем пароль перед сохранением
+            user.setPassword(BCrypt.hashpw(user.getPassword(), BCrypt.gensalt()));
             em.persist(user);
+
             em.getTransaction().commit();
         } catch (PersistenceException e) {
             if (em.getTransaction().isActive()) {
@@ -995,36 +1115,12 @@ public class User {
     private String password;
 
     // Геттеры и сеттеры
-
-    // Геттер для id
-    public Long getId() {
-        return id;
-    }
-
-    // Сеттер для id
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    // Геттер для username
-    public String getUsername() {
-        return username;
-    }
-
-    // Сеттер для username
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    // Геттер для password
-    public String getPassword() {
-        return password;
-    }
-
-    // Сеттер для password
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 }
 ```
 
@@ -1373,9 +1469,22 @@ public class FormService {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Главная страница</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+     
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+
     <style>
         /* Стили для переключателя вкладок */
+        .welcome-title {
+            display: flex;
+            justify-content: center;
+        }
         .tab-switcher {
             display: flex;
             justify-content: center;
@@ -1407,8 +1516,8 @@ public class FormService {
     <div class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-md-6">
-                <h1 class="display-4">Доброго пожаловать!</h1>
-                <!-- Переключатель вкладок -->
+                <h1 class="welcome-title">Добро пожаловать!</h1>
+
                 <div class="tab-switcher">
                     <button id="login-tab" class="active">Авторизация</button>
                     <button id="register-tab">Регистрация</button>
@@ -1416,7 +1525,8 @@ public class FormService {
 
                 <!-- Вкладка "Авторизация" -->
                 <div id="login-content" class="tab-content active">
-                    <form action="/login" method="post" id="login-form">
+                    <!-- <form action="/login" method="post" id="login-form"> -->
+                    <form id="login-form" hx-post="/login" hx-swap="none">
                         <div class="mb-3">
                             <label for="username" class="form-label">Имя пользователя:</label>
                             <input type="text" id="username" name="username" class="form-control" required>
@@ -1432,7 +1542,8 @@ public class FormService {
 
                 <!-- Вкладка "Регистрация" -->
                 <div id="register-content" class="tab-content">
-                    <form action="/register" method="post" id="register-form">
+                    <!-- <form action="/register" method="post" id="register-form"> -->
+                    <form id="register-form" hx-post="/register" hx-swap="none">
                         <div class="mb-3">
                             <label for="reg-username" class="form-label">Имя пользователя:</label>
                             <input type="text" id="reg-username" name="username" class="form-control" required>
@@ -1450,6 +1561,26 @@ public class FormService {
     </div>
 
     <script>
+        toastr.options = {
+            "closeButton": true,
+            "positionClass": "toast-top-center",
+            "preventDuplicates": true,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000"
+        };
+
+        // Обработка ответа от HTMX
+        document.body.addEventListener('htmx:afterRequest', function(event) {
+            const response = JSON.parse(event.detail.xhr.responseText);
+            if (response.error) {
+                toastr.error(response.error); // Отображаем ошибку
+            } else if (response.redirect) {
+                window.location.href = response.redirect; // Перенаправляем
+            }
+        });
+
         // Переключение между вкладками
         document.getElementById('login-tab').addEventListener('click', function() {
             switchTab('login');
