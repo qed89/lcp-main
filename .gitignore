@@ -1,0 +1,12 @@
+# Игнорировать папки
+.vscode/
+target/
+wildfly-35.0.0.Final/
+
+# Игнорировать файлы
+*.class
+*.log
+*.iml
+*.idea
+*.DS_Store
+*.ini

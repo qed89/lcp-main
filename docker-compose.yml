@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  web-app:
+    image: my-web-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+      - "9990:9990"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=jdbc:postgresql://postgres:5432/lcp
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=postgres
+    volumes:
+      - maven-repo:/root/.m2  # Кэшируем Maven-зависимости
+    networks:
+      - my-network
+
+  postgres:
+    image: postgres:16.6
+    environment:
+      POSTGRES_DB: lcp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d lcp"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - my-network
+
+volumes:
+  postgres-data:
+  maven-repo:  # Добавляем volume для кэширования Maven
+
+networks:
+  my-network:

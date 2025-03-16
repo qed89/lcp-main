@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Таблицы базы данных</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1 class="mb-4">Таблицы базы данных</h1>
+        <button class="btn btn-outline-secondary mb-3" onclick="openCreateTableForm()">Создать новую таблицу</button>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Название таблицы</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="table : ${tables}">
+                    <td th:text="${table}">Название таблицы</td>
+                    <td><a th:href="@{/t/{name}(name=${table})}" class="btn btn-outline-secondary">Просмотреть</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Форма для создания новой таблицы -->
+    <div id="create-table-form" class="modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Создание новой таблицы</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="create-table-form-content">
+                        <div class="mb-3">
+                            <label for="table-name" class="form-label">Название таблицы:</label>
+                            <input type="text" id="table-name" name="table-name" class="form-control" required>
+                        </div>
+                        <div id="attributes-container">
+                            <!-- Поля для атрибутов таблицы будут добавляться сюда -->
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary mt-2" onclick="addAttribute()">Добавить атрибут</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="button" class="btn btn-secondary" onclick="createTable()">Создать таблицу</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Подключение Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function openCreateTableForm() {
+            const modal = new bootstrap.Modal(document.getElementById('create-table-form'));
+            modal.show();
+        }
+
+        function addAttribute() {
+            const attributesContainer = document.getElementById('attributes-container');
+            const attributeDiv = document.createElement('div');
+            attributeDiv.className = 'mb-3';
+            attributeDiv.innerHTML = `
+                <label class="form-label">Атрибут:</label>
+                <input type="text" name="attribute-name" class="form-control" placeholder="Название атрибута" required>
+                <select name="attribute-type" class="form-select mt-2">
+                    <option value="VARCHAR">Текст</option>
+                    <option value="INTEGER">Число</option>
+                    <option value="BOOLEAN">Логическое</option>
+                    <option value="DATE">Дата</option>
+                </select>
+            `;
+            attributesContainer.appendChild(attributeDiv);
+        }
+
+        function createTable() {
+            const tableName = document.getElementById('table-name').value;
+            const attributes = Array.from(document.querySelectorAll('#attributes-container div')).map(div => {
+                return {
+                    name: div.querySelector('input[name="attribute-name"]').value,
+                    type: div.querySelector('select[name="attribute-type"]').value
+                };
+            });
+
+            fetch('/create-table', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 'tableName': tableName, 'attributes': attributes })
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Ошибка при создании таблицы: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+            });
+        }
+    </script>
+</body>
+</html>
