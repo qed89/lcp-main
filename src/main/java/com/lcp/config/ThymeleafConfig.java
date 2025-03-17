@@ -10,10 +10,10 @@ public class ThymeleafConfig {
     public static void initialize() {
         // Создаем резолвер шаблонов
         ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
-        templateResolver.setTemplateMode(TemplateMode.HTML); // Режим шаблонов — HTML
-        templateResolver.setPrefix("/views/");               // Папка, где находятся шаблоны
-        templateResolver.setSuffix(".html");                 // Расширение файлов шаблонов
-        templateResolver.setCacheable(false);                // Отключите кэширование для разработки
+        templateResolver.setTemplateMode(TemplateMode.HTML);    // Режим шаблонов — HTML
+        templateResolver.setPrefix("/views/");           // Папка, где находятся шаблоны
+        templateResolver.setSuffix(".html");             // Расширение файлов шаблонов
+        templateResolver.setCacheable(false);         // Отключите кэширование для разработки
 
         // Создаем и настраиваем движок Thymeleaf
         templateEngine = new TemplateEngine();

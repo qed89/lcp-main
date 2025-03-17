@@ -36,6 +36,7 @@
         \views
             error.html
             formbuilder.html
+            sidebar.html
             userForms.html
         index.html
 \test
@@ -274,10 +275,10 @@ public class ThymeleafConfig {
     public static void initialize() {
         // Создаем резолвер шаблонов
         ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
-        templateResolver.setTemplateMode(TemplateMode.HTML); // Режим шаблонов — HTML
-        templateResolver.setPrefix("/views/");               // Папка, где находятся шаблоны
-        templateResolver.setSuffix(".html");                 // Расширение файлов шаблонов
-        templateResolver.setCacheable(false);                // Отключите кэширование для разработки
+        templateResolver.setTemplateMode(TemplateMode.HTML);    // Режим шаблонов — HTML
+        templateResolver.setPrefix("/views/");           // Папка, где находятся шаблоны
+        templateResolver.setSuffix(".html");             // Расширение файлов шаблонов
+        templateResolver.setCacheable(false);         // Отключите кэширование для разработки
 
         // Создаем и настраиваем движок Thymeleaf
         templateEngine = new TemplateEngine();
@@ -406,53 +407,6 @@ public class FormBuilderServlet extends HttpServlet {
 
 ## \src\main\java\com\lcp\controller\LoginServlet.java
 ```
-// package com.lcp.controller;
-
-// import com.lcp.dao.UserDao;
-// import com.lcp.model.User;
-
-// import jakarta.servlet.ServletException;
-// import jakarta.servlet.annotation.WebServlet;
-// import jakarta.servlet.http.HttpServlet;
-// import jakarta.servlet.http.HttpServletRequest;
-// import jakarta.servlet.http.HttpServletResponse;
-
-// import java.io.IOException;
-
-// @WebServlet("/login")
-// public class LoginServlet extends HttpServlet {
-//     private UserDao userDao = new UserDao();
-
-//     @Override
-//     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-//         String username = request.getParameter("username");
-//         String password = request.getParameter("password");
-    
-//         if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
-//             sendJsonErrorResponse(response, "Имя пользователя и пароль не могут быть пустыми.");
-//             return;
-//         }
-    
-//         try {
-//             User user = userDao.findByUsername(username);
-//             if (user != null && userDao.checkPassword(password, user.getPassword())) {
-//                 request.getSession().setAttribute("user", user);
-//                 response.sendRedirect("/menu");
-//             } else {
-//                 sendJsonErrorResponse(response, "Неверное имя пользователя или пароль.");
-//             }
-//         } catch (Exception e) {
-//             sendJsonErrorResponse(response, "Ошибка при входе: " + e.getMessage());
-//         }
-//     }
-    
-//     private void sendJsonErrorResponse(HttpServletResponse response, String message) throws IOException {
-//         response.setContentType("application/json");
-//         response.setCharacterEncoding("UTF-8");
-//         response.getWriter().write("{\"error\": \"" + message + "\"}");
-//     }
-// }
-
 package com.lcp.controller;
 
 import com.google.gson.Gson;
@@ -573,71 +527,6 @@ public class MenuServlet extends HttpServlet {
 
 ## \src\main\java\com\lcp\controller\RegisterServlet.java
 ```
-// package com.lcp.controller;
-
-// import com.lcp.dao.UserDao;
-// import com.lcp.model.User;
-// import jakarta.servlet.ServletException;
-// import jakarta.servlet.annotation.WebServlet;
-// import jakarta.servlet.http.HttpServlet;
-// import jakarta.servlet.http.HttpServletRequest;
-// import jakarta.servlet.http.HttpServletResponse;
-// import jakarta.validation.ConstraintViolation;
-// import jakarta.validation.Validation;
-// import jakarta.validation.Validator;
-// import jakarta.validation.ValidatorFactory;
-
-// import java.io.IOException;
-// import java.util.Set;
-
-// @WebServlet("/register")
-// public class RegisterServlet extends HttpServlet {
-//     private UserDao userDao = new UserDao();
-
-//     @Override
-//     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-//         String username = request.getParameter("username");
-//         String password = request.getParameter("password");
-
-//         User user = new User();
-//         user.setUsername(username);
-//         user.setPassword(password);
-
-//         // Валидация
-//         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-//         Validator validator = factory.getValidator();
-//         Set<ConstraintViolation<User>> violations = validator.validate(user);
-
-//         if (!violations.isEmpty()) {
-//             StringBuilder errors = new StringBuilder();
-//             for (ConstraintViolation<User> violation : violations) {
-//                 errors.append(violation.getMessage()).append("<br>");
-//             }
-//             sendJsonErrorResponse(response, errors.toString());
-//             return;
-//         }
-
-//         // Проверка уникальности имени пользователя
-//         if (userDao.findByUsername(username) != null) {
-//             sendJsonErrorResponse(response, "Пользователь с таким именем уже существует.");
-//             return;
-//         }
-
-//         try {
-//             userDao.save(user);
-//             response.sendRedirect("index.html");
-//         } catch (Exception e) {
-//             sendJsonErrorResponse(response, "Ошибка при регистрации: " + e.getMessage());
-//         }
-//     }
-
-//     private void sendJsonErrorResponse(HttpServletResponse response, String message) throws IOException {
-//         response.setContentType("application/json");
-//         response.setCharacterEncoding("UTF-8");
-//         response.getWriter().write("{\"error\": \"" + message + "\"}");
-//     }
-// }
-
 package com.lcp.controller;
 
 import com.google.gson.Gson;
@@ -1426,17 +1315,61 @@ public class FormService {
 </html>
 ```
 
+## \src\main\webapp\views\sidebar.html
+```
+<div class="sidebar" id="sidebar">
+    <a href="/forms">Формы</a>
+    <a href="/tables">Таблицы</a>
+</div>
+<div class="burger-menu" onclick="toggleSidebar()">&#9776;</div>
+```
+
 ## \src\main\webapp\views\userForms.html
 ```
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>Мои формы</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+    <style>
+        .sidebar {
+            height: 100%;
+            width: 250px;
+            position: fixed;
+            top: 0;
+            left: -250px;
+            background-color: #f8f9fa;
+            padding-top: 60px;
+            transition: left 0.3s;
+        }
+        .sidebar.active {
+            left: 0;
+        }
+        .sidebar a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #333;
+            display: block;
+            transition: background-color 0.3s;
+        }
+        .sidebar a:hover {
+            background-color: #ddd;
+        }
+        .burger-menu {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+    </style>
 </head>
 <body class="bg-light">
+
     <div class="container mt-5">
         <h1 class="mb-4">Мои формы</h1>
         <a href="/formbuilder" class="btn btn-outline-secondary mb-3">Создать новую форму</a>
@@ -1457,6 +1390,20 @@ public class FormService {
             </table>
         </div>
     </div>
+
+    <script>
+        // Загружаем сайдбар с помощью HTMX
+        htmx.ajax('GET', '/views/sidebar.html', {
+            target: document.body,
+            swap: 'afterbegin',
+        });
+    
+        // Функция для открытия/закрытия сайдбара
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+    </script>
 </body>
 </html>
 ```
