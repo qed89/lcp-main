@@ -13,8 +13,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet("/menu")
-public class MenuServlet extends HttpServlet {
+@WebServlet("/forms")
+public class FormsServlet extends HttpServlet {
     private FormService formService = new FormService();
 
     @Override
@@ -28,14 +28,14 @@ public class MenuServlet extends HttpServlet {
         int page = Integer.parseInt(request.getParameter("page") != null ? request.getParameter("page") : "0");
         int pageSize = 10; // Количество форм на странице
 
-        List<Form> userForms = formService.getFormsByUser(user.getId(), page, pageSize);
+        List<Form> forms = formService.getFormsByUser(user.getId(), page, pageSize);
         long totalForms = formService.countFormsByUser(user.getId());
 
         response.setContentType("text/html");
-        request.setAttribute("forms", userForms);
+        request.setAttribute("forms", forms);
         request.setAttribute("currentPage", page);
         request.setAttribute("pageSize", pageSize);
         request.setAttribute("totalForms", totalForms);
-        request.getRequestDispatcher("/views/userForms.html").include(request, response);
+        request.getRequestDispatcher("/views/forms.html").include(request, response);
     }
 }

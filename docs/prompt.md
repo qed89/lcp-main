@@ -10,9 +10,9 @@
                 \controller
                     CreateTableServlet.java
                     FormBuilderServlet.java
+                    FormsServlet.java
                     LoginServlet.java
                     LogoutServlet.java
-                    MenuServlet.java
                     RegisterServlet.java
                     TableServlet.java
                     TablesServlet.java
@@ -34,10 +34,9 @@
         \META-INF
             context.xml
         \views
-            error.html
             formbuilder.html
+            forms.html
             sidebar.html
-            userForms.html
         index.html
 \test
     \java
@@ -371,6 +370,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @WebServlet("/formbuilder")
@@ -394,13 +395,64 @@ public class FormBuilderServlet extends HttpServlet {
         form.setCreatedDate(java.time.LocalDate.now().toString());
         form.setUser(user);
 
+        Map<String, String> responseData = new HashMap<>();
+
         try {
             formService.saveForm(form);
-            response.sendRedirect("/menu");
+            responseData.put("redirect", "/forms"); // Успешное создание формы, перенаправляем
         } catch (Exception e) {
-            request.setAttribute("error", "Ошибка при создании формы: " + e.getMessage());
-            request.getRequestDispatcher("/views/error.html").include(request, response);
+            responseData.put("error", "Ошибка при создании формы: " + e.getMessage()); // Ошибка
         }
+
+        // Отправляем JSON-ответ
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(new com.google.gson.Gson().toJson(responseData));
+    }
+}
+```
+
+## \src\main\java\com\lcp\controller\FormsServlet.java
+```
+package com.lcp.controller;
+
+import com.lcp.model.Form;
+import com.lcp.model.User;
+import com.lcp.service.FormService;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.util.List;
+
+@WebServlet("/forms")
+public class FormsServlet extends HttpServlet {
+    private FormService formService = new FormService();
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        User user = (User) request.getSession().getAttribute("user");
+        if (user == null) {
+            response.sendRedirect("/index.html");
+            return;
+        }
+
+        int page = Integer.parseInt(request.getParameter("page") != null ? request.getParameter("page") : "0");
+        int pageSize = 10; // Количество форм на странице
+
+        List<Form> forms = formService.getFormsByUser(user.getId(), page, pageSize);
+        long totalForms = formService.countFormsByUser(user.getId());
+
+        response.setContentType("text/html");
+        request.setAttribute("forms", forms);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("pageSize", pageSize);
+        request.setAttribute("totalForms", totalForms);
+        request.getRequestDispatcher("/views/forms.html").include(request, response);
     }
 }
 ```
@@ -441,7 +493,7 @@ public class LoginServlet extends HttpServlet {
                 User user = userDao.findByUsername(username);
                 if (user != null && userDao.checkPassword(password, user.getPassword())) {
                     request.getSession().setAttribute("user", user);
-                    responseData.put("redirect", "/menu"); // Успешный вход, перенаправляем
+                    responseData.put("redirect", "/forms"); // Успешный вход, перенаправляем
                 } else {
                     responseData.put("error", "Неверное имя пользователя или пароль.");
                 }
@@ -476,51 +528,6 @@ public class LogoutServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.getSession().invalidate();
         response.sendRedirect("index.html");
-    }
-}
-```
-
-## \src\main\java\com\lcp\controller\MenuServlet.java
-```
-package com.lcp.controller;
-
-import com.lcp.model.Form;
-import com.lcp.model.User;
-import com.lcp.service.FormService;
-
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-import java.util.List;
-
-@WebServlet("/menu")
-public class MenuServlet extends HttpServlet {
-    private FormService formService = new FormService();
-
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        User user = (User) request.getSession().getAttribute("user");
-        if (user == null) {
-            response.sendRedirect("/index.html");
-            return;
-        }
-
-        int page = Integer.parseInt(request.getParameter("page") != null ? request.getParameter("page") : "0");
-        int pageSize = 10; // Количество форм на странице
-
-        List<Form> userForms = formService.getFormsByUser(user.getId(), page, pageSize);
-        long totalForms = formService.countFormsByUser(user.getId());
-
-        response.setContentType("text/html");
-        request.setAttribute("forms", userForms);
-        request.setAttribute("currentPage", page);
-        request.setAttribute("pageSize", pageSize);
-        request.setAttribute("totalForms", totalForms);
-        request.getRequestDispatcher("/views/userForms.html").include(request, response);
     }
 }
 ```
@@ -1227,22 +1234,6 @@ public class FormService {
 <Context path=""/>
 ```
 
-## \src\main\webapp\views\error.html
-```
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Ошибка</title>
-</head>
-<body>
-    <h1>Ошибка</h1>
-    <p>${error}</p>
-    <a href="/menu">Вернуться к формам</a>
-</body>
-</html>
-```
-
 ## \src\main\webapp\views\formbuilder.html
 ```
 <!DOCTYPE html>
@@ -1251,7 +1242,76 @@ public class FormService {
     <meta charset="UTF-8">
     <title>Создание формы</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script>
+
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+     
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1 class="mb-4">Создание новой формы</h1>
+        <form hx-post="/formbuilder" hx-swap="none" class="mb-3" id="create-form">
+            <div class="mb-3">
+                <label for="name" class="form-label">Название формы:</label>
+                <input type="text" id="name" name="name" class="form-control" required>
+            </div>
+
+            <div id="fields-container">
+                <!-- Поля будут добавляться сюда -->
+            </div>
+
+            <div class="mb-3">
+                <label for="field-type" class="form-label">Добавить поле:</label>
+                <select id="field-type" class="form-select">
+                    <option value="text">Текстовое поле</option>
+                    <option value="checkbox">Чекбокс</option>
+                    <option value="dropdown">Выпадающий список</option>
+                </select>
+                <button type="button" class="btn btn-outline-secondary mt-2" onclick="addField()">Добавить поле</button>
+            </div>
+
+            <button type="submit" class="btn btn-outline-secondary">Создать форму</button>
+        </form>
+        <a href="/forms" class="btn btn-outline-secondary">Назад к формам</a>
+    </div>
+
+    <script defer>
+        toastr.options = {
+            "closeButton": true,
+            "positionClass": "toast-top-center",
+            "preventDuplicates": true,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000"
+        };
+
+        // Обработка ответа от сервера
+        document.getElementById('create-form').addEventListener('submit', function (event) {
+            event.preventDefault(); // Отменяем стандартную отправку формы
+
+            const formData = new FormData(this);
+
+            fetch('/f/new', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.redirect) {
+                    window.location.href = data.redirect; // Перенаправляем на /forms
+                } else if (data.error) {
+                    toastr.error(data.error); // Отображаем ошибку через toastr
+                }
+            })
+            .catch(error => {
+                toastr.error('Ошибка при отправке формы: ' + error.message);
+            });
+        });
+
         function addField() {
             const fieldType = document.getElementById('field-type').value;
             const fieldsContainer = document.getElementById('fields-container');
@@ -1283,48 +1343,11 @@ public class FormService {
             fieldsContainer.appendChild(fieldDiv);
         }
     </script>
-</head>
-<body class="bg-light">
-    <div class="container mt-5">
-        <h1 class="mb-4">Создание новой формы</h1>
-        <form action="/formbuilder" method="post" class="mb-3">
-            <div class="mb-3">
-                <label for="name" class="form-label">Название формы:</label>
-                <input type="text" id="name" name="name" class="form-control" required>
-            </div>
-
-            <div id="fields-container">
-                <!-- Поля будут добавляться сюда -->
-            </div>
-
-            <div class="mb-3">
-                <label for="field-type" class="form-label">Добавить поле:</label>
-                <select id="field-type" class="form-select">
-                    <option value="text">Текстовое поле</option>
-                    <option value="checkbox">Чекбокс</option>
-                    <option value="dropdown">Выпадающий список</option>
-                </select>
-                <button type="button" class="btn btn-outline-secondary mt-2" onclick="addField()">Добавить поле</button>
-            </div>
-
-            <button type="submit" class="btn btn-outline-secondary">Создать форму</button>
-        </form>
-        <a href="/menu" class="btn btn-outline-secondary">Назад к формам</a>
-    </div>
 </body>
 </html>
 ```
 
-## \src\main\webapp\views\sidebar.html
-```
-<div class="sidebar" id="sidebar">
-    <a href="/forms">Формы</a>
-    <a href="/tables">Таблицы</a>
-</div>
-<div class="burger-menu" onclick="toggleSidebar()">&#9776;</div>
-```
-
-## \src\main\webapp\views\userForms.html
+## \src\main\webapp\views\forms.html
 ```
 <!DOCTYPE html>
 <html>
@@ -1406,6 +1429,15 @@ public class FormService {
     </script>
 </body>
 </html>
+```
+
+## \src\main\webapp\views\sidebar.html
+```
+<div class="sidebar" id="sidebar">
+    <a href="/forms">Формы</a>
+    <a href="/tables">Таблицы</a>
+</div>
+<div class="burger-menu" onclick="toggleSidebar()">&#9776;</div>
 ```
 
 ## \src\main\webapp\index.html

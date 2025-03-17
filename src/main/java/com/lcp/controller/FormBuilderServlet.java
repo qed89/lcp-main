@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @WebServlet("/formbuilder")
@@ -34,12 +36,18 @@ public class FormBuilderServlet extends HttpServlet {
         form.setCreatedDate(java.time.LocalDate.now().toString());
         form.setUser(user);
 
+        Map<String, String> responseData = new HashMap<>();
+
         try {
             formService.saveForm(form);
-            response.sendRedirect("/menu");
+            responseData.put("redirect", "/forms"); // Успешное создание формы, перенаправляем
         } catch (Exception e) {
-            request.setAttribute("error", "Ошибка при создании формы: " + e.getMessage());
-            request.getRequestDispatcher("/views/error.html").include(request, response);
+            responseData.put("error", "Ошибка при создании формы: " + e.getMessage()); // Ошибка
         }
+
+        // Отправляем JSON-ответ
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(new com.google.gson.Gson().toJson(responseData));
     }
 }

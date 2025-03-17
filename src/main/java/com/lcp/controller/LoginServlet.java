@@ -32,7 +32,7 @@ public class LoginServlet extends HttpServlet {
                 User user = userDao.findByUsername(username);
                 if (user != null && userDao.checkPassword(password, user.getPassword())) {
                     request.getSession().setAttribute("user", user);
-                    responseData.put("redirect", "/menu"); // Успешный вход, перенаправляем
+                    responseData.put("redirect", "/forms"); // Успешный вход, перенаправляем
                 } else {
                     responseData.put("error", "Неверное имя пользователя или пароль.");
                 }
