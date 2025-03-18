@@ -28,15 +28,20 @@
         \META-INF
             persistence.xml
         \views
-            table.html
-            tables.html
     \webapp
+        \css
+            animations.css
+            sidebar.css
+        \js
+            sidebar.js
         \META-INF
             context.xml
         \views
             formbuilder.html
             forms.html
             sidebar.html
+            table.html
+            tables.html
         index.html
 \test
     \java
@@ -336,7 +341,7 @@ public class CreateTableServlet extends HttpServlet {
         ArrayList attributes = (ArrayList) data.get("attributes");
 
         // Создание таблицы в базе данных
-        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/lcp", "postgres", "postgres");
+        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://postgres:5432/lcp", "postgres", "postgres");
              Statement stmt = conn.createStatement()) {
 
             StringBuilder sql = new StringBuilder("CREATE TABLE " + tableName + " (id SERIAL PRIMARY KEY");
@@ -603,19 +608,183 @@ public class RegisterServlet extends HttpServlet {
 
 ## \src\main\java\com\lcp\controller\TableServlet.java
 ```
-package com.lcp.controller;
+// package com.lcp.controller;
 
-import com.lcp.config.ThymeleafConfig;
+// import com.lcp.config.ThymeleafConfig;
+
+// import jakarta.servlet.ServletException;
+// import jakarta.servlet.annotation.WebServlet;
+// import jakarta.servlet.http.HttpServlet;
+// import jakarta.servlet.http.HttpServletRequest;
+// import jakarta.servlet.http.HttpServletResponse;
+
+// import org.thymeleaf.TemplateEngine;
+// import org.thymeleaf.context.WebContext;
+// import org.thymeleaf.web.servlet.JakartaServletWebApplication;
+
+// import java.io.IOException;
+// import java.sql.Connection;
+// import java.sql.DriverManager;
+// import java.sql.ResultSet;
+// import java.sql.Statement;
+// import java.util.ArrayList;
+// import java.util.List;
+
+// @WebServlet("/t/*")
+// public class TableServlet extends HttpServlet {
+//     private TemplateEngine templateEngine;
+
+//     @Override
+//     public void init() throws ServletException {
+//         // Инициализация Thymeleaf
+//         ThymeleafConfig.initialize();
+//         templateEngine = ThymeleafConfig.getTemplateEngine();
+//     }
+
+//     @Override
+//     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+//         // Устанавливаем кодировку ответа
+//         response.setCharacterEncoding("UTF-8");
+//         response.setContentType("text/html; charset=UTF-8");
+
+//         String tableName = request.getPathInfo().substring(1);
+
+//         List<String> headers = new ArrayList<>();
+//         List<List<Object>> rows = new ArrayList<>();
+
+//         // Получаем данные из таблицы
+//         try (Connection conn = DriverManager.getConnection("jdbc:postgresql://postgres:5432/lcp", "postgres", "postgres");
+//              Statement stmt = conn.createStatement();
+//              ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName)) {
+
+//             // Получаем заголовки
+//             for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+//                 headers.add(rs.getMetaData().getColumnName(i));
+//             }
+
+//             // Получаем строки
+//             while (rs.next()) {
+//                 List<Object> row = new ArrayList<>();
+//                 for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+//                     row.add(rs.getObject(i));
+//                 }
+//                 rows.add(row);
+//             }
+//         } catch (Exception e) {
+//             e.printStackTrace();
+//         }
+
+//         // Создаем контекст для Thymeleaf
+//         var application = JakartaServletWebApplication.buildApplication(getServletContext());
+//         var webExchange = application.buildExchange(request, response);
+//         WebContext context = new WebContext(webExchange);
+
+//         // Передаем данные в шаблон
+//         context.setVariable("tableName", tableName);
+//         context.setVariable("headers", headers);
+//         context.setVariable("rows", rows);
+
+//         // Обрабатываем шаблон и отправляем ответ
+//         templateEngine.process("table", context, response.getWriter());
+//     }
+// }
+
+
+
+
+
+// package com.lcp.controller;
+
+// import com.google.gson.Gson;
+// import jakarta.servlet.ServletException;
+// import jakarta.servlet.annotation.WebServlet;
+// import jakarta.servlet.http.HttpServlet;
+// import jakarta.servlet.http.HttpServletRequest;
+// import jakarta.servlet.http.HttpServletResponse;
+
+// import java.io.BufferedReader;
+// import java.io.IOException;
+// import java.sql.Connection;
+// import java.sql.DriverManager;
+// import java.sql.ResultSet;
+// import java.sql.Statement;
+// import java.util.ArrayList;
+// import java.util.HashMap;
+// import java.util.List;
+// import java.util.Map;
+
+// @WebServlet("/t/*")
+// public class TableServlet extends HttpServlet {
+
+//     @Override
+//     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+//         String tableName = request.getPathInfo().substring(1); // Извлекаем имя таблицы из URL
+
+//         // Устанавливаем кодировку ответа
+//         response.setCharacterEncoding("UTF-8");
+//         response.setContentType("text/html; charset=UTF-8");
+
+//         // Получаем данные из таблицы
+//         List<String> headers = new ArrayList<>();
+//         List<List<Object>> rows = new ArrayList<>();
+
+//         try (Connection conn = DriverManager.getConnection("jdbc:postgresql://postgres:5432/lcp", "postgres", "postgres");
+//              Statement stmt = conn.createStatement();
+//              ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName)) {
+
+//             // Получаем заголовки
+//             for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+//                 headers.add(rs.getMetaData().getColumnName(i));
+//             }
+
+//             // Получаем строки
+//             while (rs.next()) {
+//                 List<Object> row = new ArrayList<>();
+//                 for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+//                     row.add(rs.getObject(i));
+//                 }
+//                 rows.add(row);
+//             }
+//         } catch (Exception e) {
+//             e.printStackTrace();
+//         }
+
+//         // Формируем HTML-ответ
+//         StringBuilder html = new StringBuilder();
+//         html.append("<h1 class=\"mb-4\">Таблица: ").append(tableName).append("</h1>");
+//         if (!rows.isEmpty()) {
+//             html.append("<table class=\"table table-striped\">")
+//                 .append("<thead><tr>");
+//             for (String header : headers) {
+//                 html.append("<th>").append(header).append("</th>");
+//             }
+//             html.append("</tr></thead><tbody>");
+//             for (List<Object> row : rows) {
+//                 html.append("<tr>");
+//                 for (Object value : row) {
+//                     html.append("<td>").append(value).append("</td>");
+//                 }
+//                 html.append("</tr>");
+//             }
+//             html.append("</tbody></table>");
+//         } else {
+//             html.append("<p>Таблица пуста.</p>");
+//         }
+
+//         response.getWriter().write(html.toString());
+//     }
+
+
+
+
+
+package com.lcp.controller;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.WebContext;
-import org.thymeleaf.web.servlet.JakartaServletWebApplication;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -625,39 +794,33 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.gson.Gson;
+
+import java.io.BufferedReader;
+import java.util.HashMap;
+import java.util.Map;
+
 @WebServlet("/t/*")
 public class TableServlet extends HttpServlet {
-    private TemplateEngine templateEngine;
-
-    @Override
-    public void init() throws ServletException {
-        // Инициализация Thymeleaf
-        ThymeleafConfig.initialize();
-        templateEngine = ThymeleafConfig.getTemplateEngine();
-    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Устанавливаем кодировку ответа
+        String tableName = request.getPathInfo().substring(1);
+
         response.setCharacterEncoding("UTF-8");
         response.setContentType("text/html; charset=UTF-8");
-
-        String tableName = request.getPathInfo().substring(1);
 
         List<String> headers = new ArrayList<>();
         List<List<Object>> rows = new ArrayList<>();
 
-        // Получаем данные из таблицы
-        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/lcp", "postgres", "postgres");
+        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://postgres:5432/lcp", "postgres", "postgres");
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName)) {
 
-            // Получаем заголовки
             for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
                 headers.add(rs.getMetaData().getColumnName(i));
             }
 
-            // Получаем строки
             while (rs.next()) {
                 List<Object> row = new ArrayList<>();
                 for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
@@ -669,35 +832,333 @@ public class TableServlet extends HttpServlet {
             e.printStackTrace();
         }
 
-        // Создаем контекст для Thymeleaf
-        var application = JakartaServletWebApplication.buildApplication(getServletContext());
-        var webExchange = application.buildExchange(request, response);
-        WebContext context = new WebContext(webExchange);
+        StringBuilder html = new StringBuilder();
+        if (!rows.isEmpty()) {
+            html.append("<table class=\"table table-striped\">")
+                .append("<thead><tr>");
+            for (String header : headers) {
+                html.append("<th>").append(header).append("</th>");
+            }
+            html.append("</tr></thead><tbody>");
+            for (List<Object> row : rows) {
+                html.append("<tr>");
+                for (Object value : row) {
+                    html.append("<td>").append(value).append("</td>");
+                }
+                html.append("</tr>");
+            }
+            html.append("</tbody></table>");
+        } else {
+            html.append("<p>Таблица пуста.</p>");
+        }
 
-        // Передаем данные в шаблон
-        context.setVariable("tableName", tableName);
-        context.setVariable("headers", headers);
-        context.setVariable("rows", rows);
+        response.getWriter().write(html.toString());
+    }
 
-        // Обрабатываем шаблон и отправляем ответ
-        templateEngine.process("table", context, response.getWriter());
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Устанавливаем кодировку запроса
+        request.setCharacterEncoding("UTF-8");
+
+        // Чтение JSON из тела запроса
+        StringBuilder jsonBuilder = new StringBuilder();
+        try (BufferedReader reader = request.getReader()) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                jsonBuilder.append(line);
+            }
+        }
+        String json = jsonBuilder.toString();
+
+        // Парсинг JSON с использованием Gson
+        Gson gson = new Gson();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = gson.fromJson(json, Map.class);
+
+        // Извлечение данных из JSON
+        String tableName = (String) data.get("tableName");
+        @SuppressWarnings("unchecked")
+        ArrayList<Map<String, String>> attributes = (ArrayList<Map<String, String>>) data.get("attributes");
+
+        // Создание таблицы в базе данных
+        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://postgres:5432/lcp", "postgres", "postgres");
+             Statement stmt = conn.createStatement()) {
+
+            StringBuilder sql = new StringBuilder("CREATE TABLE " + tableName + " (id SERIAL PRIMARY KEY");
+            for (Map<String, String> attribute : attributes) {
+                sql.append(", ").append(attribute.get("name")).append(" ").append(attribute.get("type"));
+            }
+            sql.append(")");
+
+            stmt.executeUpdate(sql.toString());
+
+            // Успешный ответ
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("success", true);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(gson.toJson(responseData));
+        } catch (Exception e) {
+            // Ошибка
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("success", false);
+            responseData.put("message", e.getMessage());
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(gson.toJson(responseData));
+        }
     }
 }
 ```
 
 ## \src\main\java\com\lcp\controller\TablesServlet.java
 ```
+// package com.lcp.controller;
+
+// import com.lcp.config.ThymeleafConfig;
+// import jakarta.servlet.ServletException;
+// import jakarta.servlet.annotation.WebServlet;
+// import jakarta.servlet.http.HttpServlet;
+// import jakarta.servlet.http.HttpServletRequest;
+// import jakarta.servlet.http.HttpServletResponse;
+// import org.thymeleaf.TemplateEngine;
+// import org.thymeleaf.context.WebContext;
+// import org.thymeleaf.web.servlet.JakartaServletWebApplication;
+
+// import java.io.IOException;
+// import java.sql.Connection;
+// import java.sql.DriverManager;
+// import java.sql.ResultSet;
+// import java.sql.Statement;
+// import java.util.ArrayList;
+// import java.util.List;
+
+// @WebServlet("/tables")
+// public class TablesServlet extends HttpServlet {
+//     private TemplateEngine templateEngine;
+
+//     @Override
+//     public void init() throws ServletException {
+//         // Инициализация Thymeleaf
+//         ThymeleafConfig.initialize();
+//         templateEngine = ThymeleafConfig.getTemplateEngine();
+//     }
+
+//     @Override
+//     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+//         // Устанавливаем кодировку ответа
+//         response.setCharacterEncoding("UTF-8");
+//         response.setContentType("text/html; charset=UTF-8");
+    
+//         List<String> tables = new ArrayList<>();
+    
+//         // Получаем список таблиц из базы данных
+//         try (Connection conn = DriverManager.getConnection("jdbc:postgresql://postgres:5432/lcp", "postgres", "postgres");
+//              Statement stmt = conn.createStatement();
+//              ResultSet rs = stmt.executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")) {
+    
+//             while (rs.next()) {
+//                 tables.add(rs.getString("table_name"));
+//             }
+//         } catch (Exception e) {
+//             e.printStackTrace();
+//         }
+    
+//         // Создаем контекст для Thymeleaf
+//         var application = JakartaServletWebApplication.buildApplication(getServletContext());
+//         var webExchange = application.buildExchange(request, response);
+//         WebContext context = new WebContext(webExchange);
+    
+//         // Передаем данные в шаблон
+//         context.setVariable("tables", tables);
+    
+//         // Обрабатываем шаблон и отправляем ответ
+//         templateEngine.process("tables", context, response.getWriter());
+//     }
+// }
+
+
+
+
+
+// package com.lcp.controller;
+
+// import jakarta.servlet.ServletException;
+// import jakarta.servlet.annotation.WebServlet;
+// import jakarta.servlet.http.HttpServlet;
+// import jakarta.servlet.http.HttpServletRequest;
+// import jakarta.servlet.http.HttpServletResponse;
+
+// import java.io.IOException;
+// import java.sql.Connection;
+// import java.sql.DriverManager;
+// import java.sql.ResultSet;
+// import java.sql.Statement;
+// import java.util.ArrayList;
+// import java.util.List;
+
+// @WebServlet("/tables")
+// public class TablesServlet extends HttpServlet {
+
+//     @Override
+//     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+//         // Устанавливаем кодировку ответа
+//         response.setCharacterEncoding("UTF-8");
+//         response.setContentType("text/html; charset=UTF-8");
+
+//         List<String> tables = new ArrayList<>();
+
+//         // Получаем список таблиц из базы данных
+//         try (Connection conn = DriverManager.getConnection("jdbc:postgresql://postgres:5432/lcp", "postgres", "postgres");
+//              Statement stmt = conn.createStatement();
+//              ResultSet rs = stmt.executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")) {
+
+//             while (rs.next()) {
+//                 tables.add(rs.getString("table_name"));
+//             }
+//         } catch (Exception e) {
+//             e.printStackTrace();
+//         }
+
+//         // Формируем HTML-ответ
+//         StringBuilder html = new StringBuilder();
+//         html.append("<h1 class=\"mb-4\">Таблицы базы данных</h1>")
+//             .append("<button class=\"btn btn-outline-secondary mb-3\" onclick=\"openCreateTableForm()\">Создать новую таблицу</button>")
+//             .append("<table class=\"table table-striped\">")
+//             .append("<thead><tr><th>Название таблицы</th><th>Действия</th></tr></thead>")
+//             .append("<tbody>");
+
+//         for (String table : tables) {
+//             html.append("<tr>")
+//                 .append("<td>").append(table).append("</td>")
+//                 .append("<td><a href=\"/t/").append(table).append("\" class=\"btn btn-outline-secondary\">Просмотреть</a></td>")
+//                 .append("</tr>");
+//         }
+
+//         html.append("</tbody></table>");
+
+//         response.getWriter().write(html.toString());
+//     }
+// }
+
+
+
+
+
+// package com.lcp.controller;
+
+// import jakarta.servlet.ServletException;
+// import jakarta.servlet.annotation.WebServlet;
+// import jakarta.servlet.http.HttpServlet;
+// import jakarta.servlet.http.HttpServletRequest;
+// import jakarta.servlet.http.HttpServletResponse;
+
+// import java.io.IOException;
+// import java.sql.Connection;
+// import java.sql.DriverManager;
+// import java.sql.ResultSet;
+// import java.sql.Statement;
+// import java.util.ArrayList;
+// import java.util.List;
+
+// @WebServlet("/tables")
+// public class TablesServlet extends HttpServlet {
+
+//     @Override
+//     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+//         response.setCharacterEncoding("UTF-8");
+//         response.setContentType("text/html; charset=UTF-8");
+
+//         List<String> tables = new ArrayList<>();
+
+//         try (Connection conn = DriverManager.getConnection("jdbc:postgresql://postgres:5432/lcp", "postgres", "postgres");
+//              Statement stmt = conn.createStatement();
+//              ResultSet rs = stmt.executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")) {
+
+//             while (rs.next()) {
+//                 tables.add(rs.getString("table_name"));
+//             }
+//         } catch (Exception e) {
+//             e.printStackTrace();
+//         }
+
+//         StringBuilder html = new StringBuilder();
+//         for (String table : tables) {
+//             html.append("<tr>")
+//                 .append("<td>").append(table).append("</td>")
+//                 .append("<td><a href=\"/t/").append(table).append("\" class=\"btn btn-outline-secondary\">Просмотреть</a></td>")
+//                 .append("</tr>");
+//         }
+
+//         response.getWriter().write(html.toString());
+//     }
+// }
+
+
+
+
+
+// package com.lcp.controller;
+
+// import jakarta.servlet.ServletException;
+// import jakarta.servlet.annotation.WebServlet;
+// import jakarta.servlet.http.HttpServlet;
+// import jakarta.servlet.http.HttpServletRequest;
+// import jakarta.servlet.http.HttpServletResponse;
+
+// import java.io.IOException;
+// import java.sql.Connection;
+// import java.sql.DriverManager;
+// import java.sql.ResultSet;
+// import java.sql.Statement;
+// import java.util.ArrayList;
+// import java.util.List;
+
+// @WebServlet("/tables")
+// public class TablesServlet extends HttpServlet {
+
+//     @Override
+//     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+//         response.setCharacterEncoding("UTF-8");
+//         response.setContentType("text/html; charset=UTF-8");
+
+//         List<String> tables = new ArrayList<>();
+
+//         try (Connection conn = DriverManager.getConnection("jdbc:postgresql://postgres:5432/lcp", "postgres", "postgres");
+//              Statement stmt = conn.createStatement();
+//              ResultSet rs = stmt.executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")) {
+
+//             while (rs.next()) {
+//                 tables.add(rs.getString("table_name"));
+//             }
+//         } catch (Exception e) {
+//             e.printStackTrace();
+//         }
+
+//         // Формируем HTML-фрагмент для строк таблицы
+//         StringBuilder html = new StringBuilder();
+//         for (String table : tables) {
+//             html.append("<tr>")
+//                 .append("<td>").append(table).append("</td>")
+//                 .append("<td><a href=\"/t/").append(table).append("\" class=\"btn btn-outline-secondary\">Просмотреть</a></td>")
+//                 .append("</tr>");
+//         }
+
+//         response.getWriter().write(html.toString());
+//     }
+// }
+
+
+
+
+
 package com.lcp.controller;
 
-import com.lcp.config.ThymeleafConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.WebContext;
-import org.thymeleaf.web.servlet.JakartaServletWebApplication;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -709,45 +1170,27 @@ import java.util.List;
 
 @WebServlet("/tables")
 public class TablesServlet extends HttpServlet {
-    private TemplateEngine templateEngine;
-
-    @Override
-    public void init() throws ServletException {
-        // Инициализация Thymeleaf
-        ThymeleafConfig.initialize();
-        templateEngine = ThymeleafConfig.getTemplateEngine();
-    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Устанавливаем кодировку ответа
-        response.setCharacterEncoding("UTF-8");
-        response.setContentType("text/html; charset=UTF-8");
-    
         List<String> tables = new ArrayList<>();
-    
-        // Получаем список таблиц из базы данных
-        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost:5432/lcp", "postgres", "postgres");
+
+        try (Connection conn = DriverManager.getConnection("jdbc:postgresql://postgres:5432/lcp", "postgres", "postgres");
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")) {
-    
+
             while (rs.next()) {
                 tables.add(rs.getString("table_name"));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-    
-        // Создаем контекст для Thymeleaf
-        var application = JakartaServletWebApplication.buildApplication(getServletContext());
-        var webExchange = application.buildExchange(request, response);
-        WebContext context = new WebContext(webExchange);
-    
-        // Передаем данные в шаблон
-        context.setVariable("tables", tables);
-    
-        // Обрабатываем шаблон и отправляем ответ
-        templateEngine.process("tables", context, response.getWriter());
+
+        // Передаем список таблиц в запрос
+        request.setAttribute("tables", tables);
+
+        // Перенаправляем на шаблон tables.html
+        request.getRequestDispatcher("/views/tables.html").forward(request, response);
     }
 }
 ```
@@ -1080,155 +1523,6 @@ public class FormService {
 </persistence>
 ```
 
-## \src\main\resources\views\table.html
-```
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title th:text="${tableName}">Таблица</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-    <div class="container mt-5">
-        <h1 class="mb-4" th:text="'Таблица: ' + ${tableName}">Таблица</h1>
-        <div th:if="${not rows.empty}">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th th:each="header : ${headers}" th:text="${header}">Заголовок</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="row : ${rows}">
-                        <td th:each="value : ${row}" th:text="${value}">Значение</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div th:if="${rows.empty}">
-            <p>Таблица пуста.</p>
-        </div>
-    </div>
-</body>
-</html>
-```
-
-## \src\main\resources\views\tables.html
-```
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Таблицы базы данных</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-    <div class="container mt-5">
-        <h1 class="mb-4">Таблицы базы данных</h1>
-        <button class="btn btn-outline-secondary mb-3" onclick="openCreateTableForm()">Создать новую таблицу</button>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Название таблицы</th>
-                    <th>Действия</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="table : ${tables}">
-                    <td th:text="${table}">Название таблицы</td>
-                    <td><a th:href="@{/t/{name}(name=${table})}" class="btn btn-outline-secondary">Просмотреть</a></td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Форма для создания новой таблицы -->
-    <div id="create-table-form" class="modal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Создание новой таблицы</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="create-table-form-content">
-                        <div class="mb-3">
-                            <label for="table-name" class="form-label">Название таблицы:</label>
-                            <input type="text" id="table-name" name="table-name" class="form-control" required>
-                        </div>
-                        <div id="attributes-container">
-                            <!-- Поля для атрибутов таблицы будут добавляться сюда -->
-                        </div>
-                        <button type="button" class="btn btn-outline-secondary mt-2" onclick="addAttribute()">Добавить атрибут</button>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Закрыть</button>
-                    <button type="button" class="btn btn-secondary" onclick="createTable()">Создать таблицу</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Подключение Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script>
-        function openCreateTableForm() {
-            const modal = new bootstrap.Modal(document.getElementById('create-table-form'));
-            modal.show();
-        }
-
-        function addAttribute() {
-            const attributesContainer = document.getElementById('attributes-container');
-            const attributeDiv = document.createElement('div');
-            attributeDiv.className = 'mb-3';
-            attributeDiv.innerHTML = `
-                <label class="form-label">Атрибут:</label>
-                <input type="text" name="attribute-name" class="form-control" placeholder="Название атрибута" required>
-                <select name="attribute-type" class="form-select mt-2">
-                    <option value="VARCHAR">Текст</option>
-                    <option value="INTEGER">Число</option>
-                    <option value="BOOLEAN">Логическое</option>
-                    <option value="DATE">Дата</option>
-                </select>
-            `;
-            attributesContainer.appendChild(attributeDiv);
-        }
-
-        function createTable() {
-            const tableName = document.getElementById('table-name').value;
-            const attributes = Array.from(document.querySelectorAll('#attributes-container div')).map(div => {
-                return {
-                    name: div.querySelector('input[name="attribute-name"]').value,
-                    type: div.querySelector('select[name="attribute-type"]').value
-                };
-            });
-
-            fetch('/create-table', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ 'tableName': tableName, 'attributes': attributes })
-            }).then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.reload();
-                } else {
-                    alert('Ошибка при создании таблицы: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Ошибка:', error);
-            });
-        }
-    </script>
-</body>
-</html>
-```
-
 ## \src\main\webapp\META-INF\context.xml
 ```
 <Context path=""/>
@@ -1249,6 +1543,9 @@ public class FormService {
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+    <link href="/css/sidebar.css" rel="stylesheet">
 </head>
 <body class="bg-light">
     <div class="container mt-5">
@@ -1343,6 +1640,8 @@ public class FormService {
             fieldsContainer.appendChild(fieldDiv);
         }
     </script>
+
+    <script src="/js/sidebar.js"></script>
 </body>
 </html>
 ```
@@ -1356,43 +1655,9 @@ public class FormService {
     <title>Мои формы</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://unpkg.com/htmx.org@1.9.3"></script>
-    <style>
-        .sidebar {
-            height: 100%;
-            width: 250px;
-            position: fixed;
-            top: 0;
-            left: -250px;
-            background-color: #f8f9fa;
-            padding-top: 60px;
-            transition: left 0.3s;
-        }
-        .sidebar.active {
-            left: 0;
-        }
-        .sidebar a {
-            padding: 10px 15px;
-            text-decoration: none;
-            font-size: 18px;
-            color: #333;
-            display: block;
-            transition: background-color 0.3s;
-        }
-        .sidebar a:hover {
-            background-color: #ddd;
-        }
-        .burger-menu {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            font-size: 24px;
-            cursor: pointer;
-            z-index: 1000;
-        }
-    </style>
+    <link href="/css/sidebar.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-
     <div class="container mt-5">
         <h1 class="mb-4">Мои формы</h1>
         <a href="/formbuilder" class="btn btn-outline-secondary mb-3">Создать новую форму</a>
@@ -1414,19 +1679,7 @@ public class FormService {
         </div>
     </div>
 
-    <script>
-        // Загружаем сайдбар с помощью HTMX
-        htmx.ajax('GET', '/views/sidebar.html', {
-            target: document.body,
-            swap: 'afterbegin',
-        });
-    
-        // Функция для открытия/закрытия сайдбара
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('active');
-        }
-    </script>
+    <script src="/js/sidebar.js"></script>
 </body>
 </html>
 ```
@@ -1438,6 +1691,618 @@ public class FormService {
     <a href="/tables">Таблицы</a>
 </div>
 <div class="burger-menu" onclick="toggleSidebar()">&#9776;</div>
+```
+
+## \src\main\webapp\views\table.html
+```
+<!-- <!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Таблица</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1 class="mb-4">Таблица</h1>
+        <div id="table-content" hx-get="/t/*" hx-trigger="load">
+        </div>
+    </div>
+</body>
+</html> -->
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Таблица</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/animations.css" rel="stylesheet"> 
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div id="table-content" hx-get="/t/*" hx-trigger="load">
+            <div class="loading-spinner"></div> 
+        </div>
+    </div>
+
+    <script>
+        // Добавляем класс fade-in после загрузки данных
+        document.body.addEventListener('htmx:afterSwap', function (event) {
+            if (event.detail.target.id === 'table-content') {
+                event.detail.target.classList.add('fade-in');
+            }
+        });
+    </script>
+</body>
+</html> -->
+
+
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Таблица</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+    <style>
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1 class="mb-4" id="table-title">Таблица</h1>
+        <div id="table-content" hx-get="/t/*" hx-trigger="load">
+            <div class="loading-spinner"></div> <!-- Анимация загрузки -->
+        </div>
+    </div>
+</body>
+</html>
+```
+
+## \src\main\webapp\views\tables.html
+```
+<!-- <!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Таблицы базы данных</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1 class="mb-4">Таблицы базы данных</h1>
+        <button class="btn btn-outline-secondary mb-3" onclick="openCreateTableForm()">Создать новую таблицу</button>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Название таблицы</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="table : ${tables}">
+                    <td th:text="${table}">Название таблицы</td>
+                    <td><a th:href="@{/t/{name}(name=${table})}" class="btn btn-outline-secondary">Просмотреть</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="create-table-form" class="modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Создание новой таблицы</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="create-table-form-content">
+                        <div class="mb-3">
+                            <label for="table-name" class="form-label">Название таблицы:</label>
+                            <input type="text" id="table-name" name="table-name" class="form-control" required>
+                        </div>
+                        <div id="attributes-container">
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary mt-2" onclick="addAttribute()">Добавить атрибут</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="button" class="btn btn-secondary" onclick="createTable()">Создать таблицу</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function openCreateTableForm() {
+            const modal = new bootstrap.Modal(document.getElementById('create-table-form'));
+            modal.show();
+        }
+
+        function addAttribute() {
+            const attributesContainer = document.getElementById('attributes-container');
+            const attributeDiv = document.createElement('div');
+            attributeDiv.className = 'mb-3';
+            attributeDiv.innerHTML = `
+                <label class="form-label">Атрибут:</label>
+                <input type="text" name="attribute-name" class="form-control" placeholder="Название атрибута" required>
+                <select name="attribute-type" class="form-select mt-2">
+                    <option value="VARCHAR">Текст</option>
+                    <option value="INTEGER">Число</option>
+                    <option value="BOOLEAN">Логическое</option>
+                    <option value="DATE">Дата</option>
+                </select>
+            `;
+            attributesContainer.appendChild(attributeDiv);
+        }
+
+        function createTable() {
+            const tableName = document.getElementById('table-name').value;
+            const attributes = Array.from(document.querySelectorAll('#attributes-container div')).map(div => {
+                return {
+                    name: div.querySelector('input[name="attribute-name"]').value,
+                    type: div.querySelector('select[name="attribute-type"]').value
+                };
+            });
+
+            fetch('/create-table', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 'tableName': tableName, 'attributes': attributes })
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Ошибка при создании таблицы: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+            });
+        }
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Таблицы базы данных</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1 class="mb-4">Таблицы базы данных</h1>
+        <button class="btn btn-outline-secondary mb-3" onclick="openCreateTableForm()">Создать новую таблицу</button>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Название таблицы</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="tables-body" hx-get="/tables-data" hx-trigger="load">
+            </tbody>
+        </table>
+    </div>
+
+    <div id="create-table-form" class="modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Создание новой таблицы</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="create-table-form-content">
+                        <div class="mb-3">
+                            <label for="table-name" class="form-label">Название таблицы:</label>
+                            <input type="text" id="table-name" name="table-name" class="form-control" required>
+                        </div>
+                        <div id="attributes-container">
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary mt-2" onclick="addAttribute()">Добавить атрибут</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="button" class="btn btn-secondary" onclick="createTable()">Создать таблицу</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function openCreateTableForm() {
+            const modal = new bootstrap.Modal(document.getElementById('create-table-form'));
+            modal.show();
+        }
+
+        function addAttribute() {
+            const attributesContainer = document.getElementById('attributes-container');
+            const attributeDiv = document.createElement('div');
+            attributeDiv.className = 'mb-3';
+            attributeDiv.innerHTML = `
+                <label class="form-label">Атрибут:</label>
+                <input type="text" name="attribute-name" class="form-control" placeholder="Название атрибута" required>
+                <select name="attribute-type" class="form-select mt-2">
+                    <option value="VARCHAR">Текст</option>
+                    <option value="INTEGER">Число</option>
+                    <option value="BOOLEAN">Логическое</option>
+                    <option value="DATE">Дата</option>
+                </select>
+            `;
+            attributesContainer.appendChild(attributeDiv);
+        }
+
+        function createTable() {
+            const tableName = document.getElementById('table-name').value;
+            const attributes = Array.from(document.querySelectorAll('#attributes-container div')).map(div => {
+                return {
+                    name: div.querySelector('input[name="attribute-name"]').value,
+                    type: div.querySelector('select[name="attribute-type"]').value
+                };
+            });
+
+            fetch('/create-table', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 'tableName': tableName, 'attributes': attributes })
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Ошибка при создании таблицы: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+            });
+        }
+    </script>
+</body>
+</html> -->
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Таблицы базы данных</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div id="tables-content" hx-get="/tables" hx-trigger="load">
+        </div>
+    </div>
+</body>
+</html> -->
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Таблицы базы данных</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/animations.css" rel="stylesheet"> 
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1 class="mb-4">Таблицы базы данных</h1>
+        <button class="btn btn-outline-secondary mb-3" onclick="openCreateTableForm()">Создать новую таблицу</button>
+        <div id="tables-content" hx-get="/tables" hx-trigger="load">
+            <div class="loading-spinner"></div> 
+        </div>
+    </div>
+
+    <script>
+        // Добавляем класс fade-in после загрузки данных
+        document.body.addEventListener('htmx:afterSwap', function (event) {
+            if (event.detail.target.id === 'tables-content') {
+                event.detail.target.classList.add('fade-in');
+            }
+        });
+    </script>
+</body>
+</html> -->
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Таблицы базы данных</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+    <style>
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1 class="mb-4">Таблицы базы данных</h1>
+        <button class="btn btn-outline-secondary mb-3" onclick="openCreateTableForm()">Создать новую таблицу</button>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Название таблицы</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="tables-body" hx-get="/tables" hx-trigger="load">
+                <tr>
+                    <td colspan="2" class="text-center">
+                        <div class="loading-spinner"></div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="create-table-form" class="modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Создание новой таблицы</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="create-table-form-content">
+                        <div class="mb-3">
+                            <label for="table-name" class="form-label">Название таблицы:</label>
+                            <input type="text" id="table-name" name="table-name" class="form-control" required>
+                        </div>
+                        <div id="attributes-container">
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary mt-2" onclick="addAttribute()">Добавить атрибут</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="button" class="btn btn-secondary" onclick="createTable()">Создать таблицу</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function openCreateTableForm() {
+            const modal = new bootstrap.Modal(document.getElementById('create-table-form'));
+            modal.show();
+        }
+
+        function addAttribute() {
+            const attributesContainer = document.getElementById('attributes-container');
+            const attributeDiv = document.createElement('div');
+            attributeDiv.className = 'mb-3';
+            attributeDiv.innerHTML = `
+                <label class="form-label">Атрибут:</label>
+                <input type="text" name="attribute-name" class="form-control" placeholder="Название атрибута" required>
+                <select name="attribute-type" class="form-select mt-2">
+                    <option value="VARCHAR">Текст</option>
+                    <option value="INTEGER">Число</option>
+                    <option value="BOOLEAN">Логическое</option>
+                    <option value="DATE">Дата</option>
+                </select>
+            `;
+            attributesContainer.appendChild(attributeDiv);
+        }
+
+        function createTable() {
+            const tableName = document.getElementById('table-name').value;
+            const attributes = Array.from(document.querySelectorAll('#attributes-container div')).map(div => {
+                return {
+                    name: div.querySelector('input[name="attribute-name"]').value,
+                    type: div.querySelector('select[name="attribute-type"]').value
+                };
+            });
+
+            fetch('/t', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 'tableName': tableName, 'attributes': attributes })
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Ошибка при создании таблицы: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+            });
+        }
+    </script>
+</body>
+</html> -->
+
+
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Таблицы базы данных</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+    <style>
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1 class="mb-4">Таблицы базы данных</h1>
+        <button class="btn btn-outline-secondary mb-3" onclick="openCreateTableForm()">Создать новую таблицу</button>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Название таблицы</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="tables-body" hx-get="/tables" hx-trigger="load">
+                <tr>
+                    <td colspan="2" class="text-center">
+                        <div class="loading-spinner"></div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="create-table-form" class="modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Создание новой таблицы</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="create-table-form-content">
+                        <div class="mb-3">
+                            <label for="table-name" class="form-label">Название таблицы:</label>
+                            <input type="text" id="table-name" name="table-name" class="form-control" required>
+                        </div>
+                        <div id="attributes-container">
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary mt-2" onclick="addAttribute()">Добавить атрибут</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="button" class="btn btn-secondary" onclick="createTable()">Создать таблицу</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function openCreateTableForm() {
+            const modal = new bootstrap.Modal(document.getElementById('create-table-form'));
+            modal.show();
+        }
+
+        function addAttribute() {
+            const attributesContainer = document.getElementById('attributes-container');
+            const attributeDiv = document.createElement('div');
+            attributeDiv.className = 'mb-3';
+            attributeDiv.innerHTML = `
+                <label class="form-label">Атрибут:</label>
+                <input type="text" name="attribute-name" class="form-control" placeholder="Название атрибута" required>
+                <select name="attribute-type" class="form-select mt-2">
+                    <option value="VARCHAR">Текст</option>
+                    <option value="INTEGER">Число</option>
+                    <option value="BOOLEAN">Логическое</option>
+                    <option value="DATE">Дата</option>
+                </select>
+            `;
+            attributesContainer.appendChild(attributeDiv);
+        }
+
+        function createTable() {
+            const tableName = document.getElementById('table-name').value;
+            const attributes = Array.from(document.querySelectorAll('#attributes-container div')).map(div => {
+                return {
+                    name: div.querySelector('input[name="attribute-name"]').value,
+                    type: div.querySelector('select[name="attribute-type"]').value
+                };
+            });
+
+            fetch('/t', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 'tableName': tableName, 'attributes': attributes })
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Ошибка при создании таблицы: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+            });
+        }
+    </script>
+</body>
+</html>
 ```
 
 ## \src\main\webapp\index.html

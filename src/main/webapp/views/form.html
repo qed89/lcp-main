@@ -11,11 +11,14 @@
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    
+    <script src="https://unpkg.com/htmx.org@1.9.3"></script>
+    <link href="/css/sidebar.css" rel="stylesheet">
 </head>
 <body class="bg-light">
     <div class="container mt-5">
         <h1 class="mb-4">Создание новой формы</h1>
-        <form hx-post="/formbuilder" hx-swap="none" class="mb-3" id="create-form">
+        <form hx-post="/f" hx-swap="none" class="mb-3" id="create-form">
             <div class="mb-3">
                 <label for="name" class="form-label">Название формы:</label>
                 <input type="text" id="name" name="name" class="form-control" required>
@@ -105,5 +108,7 @@
             fieldsContainer.appendChild(fieldDiv);
         }
     </script>
+
+    <script src="/js/sidebar.js"></script>
 </body>
 </html>

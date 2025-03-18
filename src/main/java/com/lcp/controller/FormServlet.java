@@ -15,14 +15,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@WebServlet("/formbuilder")
-public class FormBuilderServlet extends HttpServlet {
+@WebServlet("/f")
+public class FormServlet extends HttpServlet {
     private FormService formService = new FormService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setContentType("text/html");
-        request.getRequestDispatcher("/views/formbuilder.html").include(request, response);
+        request.getRequestDispatcher("/views/form.html").include(request, response);
     }
 
     @Override
