@@ -1,8 +1,7 @@
 package com.lcp.controller;
 
-import com.lcp.model.Form;
-import com.lcp.model.User;
-import com.lcp.service.FormService;
+import com.google.gson.Gson;
+import com.lcp.util.HttpClientUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -10,44 +9,50 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @WebServlet("/f")
 public class FormServlet extends HttpServlet {
-    private FormService formService = new FormService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setContentType("text/html");
-        request.getRequestDispatcher("/views/form.html").include(request, response);
+        request.getRequestDispatcher("/views/form.html").forward(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String name = request.getParameter("name");
-        User user = (User) request.getSession().getAttribute("user");
-
-        Form form = new Form();
-        form.setId(UUID.randomUUID());
-        form.setName(name);
-        form.setCreatedDate(java.time.LocalDate.now().toString());
-        form.setUser(user);
-
-        Map<String, String> responseData = new HashMap<>();
-
-        try {
-            formService.saveForm(form);
-            responseData.put("redirect", "/forms"); // Успешное создание формы, перенаправляем
-        } catch (Exception e) {
-            responseData.put("error", "Ошибка при создании формы: " + e.getMessage()); // Ошибка
+        // Чтение JSON из тела запроса
+        StringBuilder jsonBuilder = new StringBuilder();
+        try (BufferedReader reader = request.getReader()) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                jsonBuilder.append(line);
+            }
         }
+        String json = jsonBuilder.toString();
 
-        // Отправляем JSON-ответ
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(new com.google.gson.Gson().toJson(responseData));
+        // Отправка данных в микросервис на Go
+        try {
+            String url = "http://go-data-service:8081/forms";
+            HttpClientUtil.post(url, json); // Отправляем JSON в микросервис
+
+            // Успешный ответ клиенту
+            Map<String, String> responseData = new HashMap<>();
+            responseData.put("redirect", "/forms");
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(new Gson().toJson(responseData));
+        } catch (Exception e) {
+            // Ошибка
+            Map<String, String> responseData = new HashMap<>();
+            responseData.put("error", "Ошибка при создании формы: " + e.getMessage());
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(new Gson().toJson(responseData));
+        }
     }
 }

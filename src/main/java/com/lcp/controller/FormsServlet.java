@@ -1,8 +1,9 @@
 package com.lcp.controller;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.lcp.model.Form;
-import com.lcp.model.User;
-import com.lcp.service.FormService;
+import com.lcp.util.HttpClientUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -15,27 +16,27 @@ import java.util.List;
 
 @WebServlet("/forms")
 public class FormsServlet extends HttpServlet {
-    private FormService formService = new FormService();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        User user = (User) request.getSession().getAttribute("user");
-        if (user == null) {
-            response.sendRedirect("/index.html");
-            return;
-        }
-
         int page = Integer.parseInt(request.getParameter("page") != null ? request.getParameter("page") : "0");
-        int pageSize = 10; // Количество форм на странице
+        int pageSize = 10;
 
-        List<Form> forms = formService.getFormsByUser(user.getId(), page, pageSize);
-        long totalForms = formService.countFormsByUser(user.getId());
+        try {
+            // Формируем URL для запроса к микросервису
+            String url = System.getenv("MICROSERVICE_URL") + "/forms?page=" + page + "&pageSize=" + pageSize;
+            String jsonResponse = HttpClientUtil.get(url);
 
-        response.setContentType("text/html");
-        request.setAttribute("forms", forms);
-        request.setAttribute("currentPage", page);
-        request.setAttribute("pageSize", pageSize);
-        request.setAttribute("totalForms", totalForms);
-        request.getRequestDispatcher("/views/forms.html").include(request, response);
+            // Десериализация JSON в список форм
+            List<Form> forms = new Gson().fromJson(jsonResponse, new TypeToken<List<Form>>() {}.getType());
+
+            // Передача данных в JSP
+            request.setAttribute("forms", forms);
+            request.getRequestDispatcher("/views/forms.html").forward(request, response);
+        } catch (Exception e) {
+            // Логируем ошибку
+            e.printStackTrace();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Ошибка при получении списка форм: " + e.getMessage());
+        }
     }
 }

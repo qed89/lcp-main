@@ -1,9 +1,7 @@
 package com.lcp.controller;
 
 import com.google.gson.Gson;
-import com.lcp.dao.ElementDao;
-import com.lcp.model.Element;
-import com.lcp.model.User;
+import com.lcp.util.HttpClientUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -15,20 +13,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @WebServlet(urlPatterns = {"/element/*", "/element/*/data"})
 public class ElementServlet extends HttpServlet {
-    private ElementDao elementDao = new ElementDao();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        User user = (User) request.getSession().getAttribute("user");
-        if (user == null) {
-            response.sendRedirect("/index.html");
-            return;
-        }
-
         String pathInfo = request.getPathInfo();
         String elementId = null;
 
@@ -48,19 +38,16 @@ public class ElementServlet extends HttpServlet {
                 return;
             }
 
-            Element element = elementDao.getElementById(UUID.fromString(elementId));
-            if (element == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Элемент не найден");
-                return;
+            try {
+                // Запрос к микросервису на Go
+                String url = "http://go-data-service:8081/elements/" + elementId;
+                String jsonResponse = HttpClientUtil.get(url);
+
+                // Отправка JSON-ответа клиенту
+                response.getWriter().write(jsonResponse);
+            } catch (Exception e) {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Ошибка при получении элемента: " + e.getMessage());
             }
-
-            Map<String, String> data = new HashMap<>();
-            data.put("name", element.getName());
-            data.put("htmlCode", element.getHtmlCode() != null ? element.getHtmlCode() : "");
-            data.put("cssCode", element.getCssCode() != null ? element.getCssCode() : "");
-            data.put("label", element.getLabel() != null ? element.getLabel() : "");
-
-            response.getWriter().write(new Gson().toJson(data));
         } else {
             response.setContentType("text/html");
             response.setCharacterEncoding("UTF-8");
@@ -70,22 +57,7 @@ public class ElementServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        User user = (User) request.getSession().getAttribute("user");
-        if (user == null) {
-            response.sendRedirect("/index.html");
-            return;
-        }
-
-        String pathInfo = request.getPathInfo();
-        String elementId = null;
-
-        if (pathInfo != null && !pathInfo.equals("/")) {
-            String[] pathParts = pathInfo.split("/");
-            if (pathParts.length > 1) {
-                elementId = pathParts[1];
-            }
-        }
-
+        // Чтение JSON из тела запроса
         StringBuilder jsonBuilder = new StringBuilder();
         try (BufferedReader reader = request.getReader()) {
             String line;
@@ -95,58 +67,24 @@ public class ElementServlet extends HttpServlet {
         }
         String json = jsonBuilder.toString();
 
-        Gson gson = new Gson();
-        @SuppressWarnings("unchecked")
-        Map<String, String> data = gson.fromJson(json, Map.class);
-
-        String name = data.get("name");
-        String htmlCode = data.get("htmlCode");
-        String cssCode = data.get("cssCode");
-        String label = data.get("label");
-
-        Element element;
-        if (elementId != null) {
-            element = elementDao.getElementById(UUID.fromString(elementId));
-            if (element == null) {
-                sendErrorResponse(response, "Элемент не найден");
-                return;
-            }
-        } else {
-            element = new Element();
-            element.setId(UUID.randomUUID());
-            element.setUser(user);
-        }
-
-        element.setName(name);
-        element.setHtmlCode(htmlCode);
-        element.setCssCode(cssCode);
-        element.setLabel(label);
-
+        // Отправка данных в микросервис на Go
         try {
-            if (elementId == null) {
-                elementDao.save(element);
-            } else {
-                elementDao.update(element);
-            }
-            sendSuccessResponse(response, "/elements");
+            String url = "http://go-data-service:8081/elements";
+            HttpClientUtil.post(url, json); // Отправляем JSON в микросервис
+
+            // Успешный ответ клиенту
+            Map<String, String> responseData = new HashMap<>();
+            responseData.put("redirect", "/elements");
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(new Gson().toJson(responseData));
         } catch (Exception e) {
-            sendErrorResponse(response, "Ошибка при сохранении элемента: " + e.getMessage());
+            // Ошибка
+            Map<String, String> responseData = new HashMap<>();
+            responseData.put("error", "Ошибка при сохранении элемента: " + e.getMessage());
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(new Gson().toJson(responseData));
         }
-    }
-
-    private void sendSuccessResponse(HttpServletResponse response, String redirect) throws IOException {
-        Map<String, String> responseData = new HashMap<>();
-        responseData.put("redirect", redirect);
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(new Gson().toJson(responseData));
-    }
-
-    private void sendErrorResponse(HttpServletResponse response, String error) throws IOException {
-        Map<String, String> responseData = new HashMap<>();
-        responseData.put("error", error);
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(new Gson().toJson(responseData));
     }
 }

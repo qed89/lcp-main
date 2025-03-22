@@ -2,7 +2,6 @@
 .vscode/
 target/
 wildfly-35.0.0.Final/
-docs/.obsidian/
 
 # Игнорировать файлы
 *.class
