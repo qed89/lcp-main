@@ -1,6 +1,7 @@
 package com.lcp.controller;
 
 import com.google.gson.Gson;
+import com.lcp.util.ApiError;
 import com.lcp.util.HttpClientUtil;
 
 import jakarta.servlet.ServletException;
@@ -10,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,16 +34,19 @@ public class LoginServlet extends HttpServlet {
                 loginData.put("password", password);
 
                 String url = "http://go-data-service:8081/login";
-                String jsonResponse = HttpClientUtil.post(url, new Gson().toJson(loginData));
+                HttpResponse<String> httpResponse = HttpClientUtil.post(url, new Gson().toJson(loginData));
 
-                if (jsonResponse.contains("Invalid username or password")) {
-                    responseData.put("error", "Неверное имя пользователя или пароль.");
+                // Обрабатываем ответ в зависимости от кода состояния
+                if (httpResponse.statusCode() == 200) {
+                    responseData.put("redirect", "/");
+                } else if (httpResponse.statusCode() == 401) {
+                    ApiError error = new Gson().fromJson(httpResponse.body(), ApiError.class);
+                    responseData.put("error", error.getMessage());
                 } else {
-                    request.getSession().setAttribute("user", username);
-                    responseData.put("redirect", "/forms");
+                    responseData.put("error", "Ошибка при регистрации: " + httpResponse.body());
                 }
             } catch (Exception e) {
-                responseData.put("error", "Ошибка при входе: " + e.getMessage());
+                responseData.put("error", "Ошибка при регистрации: " + e.getMessage());
             }
         }
 

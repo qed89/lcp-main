@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,7 +42,8 @@ public class ElementServlet extends HttpServlet {
             try {
                 // Запрос к микросервису на Go
                 String url = "http://go-data-service:8081/elements/" + elementId;
-                String jsonResponse = HttpClientUtil.get(url);
+                HttpResponse<String> httpResponse = HttpClientUtil.get(url);
+                String jsonResponse = httpResponse.body();
 
                 // Отправка JSON-ответа клиенту
                 response.getWriter().write(jsonResponse);

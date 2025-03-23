@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.net.http.HttpResponse;
 import java.util.List;
 
 @WebServlet("/forms")
@@ -25,7 +26,8 @@ public class FormsServlet extends HttpServlet {
         try {
             // Формируем URL для запроса к микросервису
             String url = System.getenv("MICROSERVICE_URL") + "/forms?page=" + page + "&pageSize=" + pageSize;
-            String jsonResponse = HttpClientUtil.get(url);
+            HttpResponse<String> httpResponse = HttpClientUtil.get(url);
+            String jsonResponse = httpResponse.body();
 
             // Десериализация JSON в список форм
             List<Form> forms = new Gson().fromJson(jsonResponse, new TypeToken<List<Form>>() {}.getType());

@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.net.http.HttpResponse;
 import java.util.List;
 
 @WebServlet(urlPatterns = {"/elements", "/elements-data"})
@@ -34,7 +35,8 @@ public class ElementsServlet extends HttpServlet {
             try {
                 // Запрос к микросервису на Go
                 String url = "http://go-data-service:8081/elements?page=" + page + "&pageSize=" + pageSize;
-                String jsonResponse = HttpClientUtil.get(url);
+                HttpResponse<String> httpResponse = HttpClientUtil.get(url);
+                String jsonResponse = httpResponse.body();
 
                 // Десериализация JSON в список элементов
                 List<Element> elements = new Gson().fromJson(jsonResponse, new TypeToken<List<Element>>() {}.getType());

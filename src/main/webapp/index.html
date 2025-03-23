@@ -60,7 +60,6 @@
 
                 <!-- Вкладка "Авторизация" -->
                 <div id="login-content" class="tab-content active">
-                    <!-- <form action="/login" method="post" id="login-form"> -->
                     <form id="login-form" hx-post="/login" hx-swap="none">
                         <div class="mb-3">
                             <label for="username" class="form-label">Имя пользователя:</label>
@@ -77,8 +76,7 @@
 
                 <!-- Вкладка "Регистрация" -->
                 <div id="register-content" class="tab-content">
-                    <!-- <form action="/register" method="post" id="register-form"> -->
-                    <form id="register-form" hx-post="/register" hx-swap="none">
+                    <form id="register-form" hx-post="/register" hx-swap="beforebegin">
                         <div class="mb-3">
                             <label for="reg-username" class="form-label">Имя пользователя:</label>
                             <input type="text" id="reg-username" name="username" class="form-control" required>
@@ -91,6 +89,8 @@
                     </form>
                     <div id="register-error-message" class="mt-3 text-danger text-center"></div>
                 </div>
+                <!-- Контейнер для сообщений -->
+                <div id="register-message"></div>
             </div>
         </div>
     </div>
@@ -107,12 +107,13 @@
         };
 
         // Обработка ответа от HTMX
-        document.body.addEventListener('htmx:afterRequest', function(event) {
-            const response = JSON.parse(event.detail.xhr.responseText);
-            if (response.error) {
-                toastr.error(response.error); // Отображаем ошибку
-            } else if (response.redirect) {
-                window.location.href = response.redirect; // Перенаправляем
+        document.body.addEventListener('htmx:afterRequest', function(event) {            
+            const response = event.detail.xhr.responseText;
+            if (response.includes("alert-danger")) {
+                const errorMessage = response.match(/<div[^>]*>(.*?)<\/div>/)[1];
+                toastr.error(errorMessage);
+            } else if (response.includes("window.location.href")) {
+                eval(response);
             }
         });
 

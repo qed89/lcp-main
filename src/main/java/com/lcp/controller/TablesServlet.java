@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.net.http.HttpResponse;
 import java.util.List;
 
 @WebServlet(urlPatterns = {"/tables", "/tables-data"})
@@ -30,7 +31,8 @@ public class TablesServlet extends HttpServlet {
             try {
                 // Запрос к микросервису на Go
                 String url = "http://go-data-service:8081/tables";
-                String jsonResponse = HttpClientUtil.get(url);
+                HttpResponse<String> httpResponse = HttpClientUtil.get(url);
+                String jsonResponse = httpResponse.body();
 
                 // Десериализация JSON в список таблиц
                 List<String> tables = new Gson().fromJson(jsonResponse, new TypeToken<List<String>>() {}.getType());
