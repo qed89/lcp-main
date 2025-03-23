@@ -2,6 +2,7 @@
 .vscode/
 target/
 wildfly-35.0.0.Final/
+src/main/webapp/js/editor/
 
 # Игнорировать файлы
 *.class

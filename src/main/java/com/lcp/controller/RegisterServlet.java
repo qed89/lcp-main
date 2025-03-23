@@ -1,8 +1,7 @@
 package com.lcp.controller;
 
 import com.google.gson.Gson;
-import com.lcp.dao.UserDao;
-import com.lcp.model.User;
+import com.lcp.util.HttpClientUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -10,19 +9,12 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validation;
-import jakarta.validation.Validator;
-import jakarta.validation.ValidatorFactory;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 @WebServlet("/register")
 public class RegisterServlet extends HttpServlet {
-    private UserDao userDao = new UserDao();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -31,33 +23,27 @@ public class RegisterServlet extends HttpServlet {
 
         Map<String, String> responseData = new HashMap<>();
 
-        User user = new User();
-        user.setUsername(username);
-        user.setPassword(password);
-
-        // Валидация
-        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-        Validator validator = factory.getValidator();
-        Set<ConstraintViolation<User>> violations = validator.validate(user);
-
-        if (!violations.isEmpty()) {
-            StringBuilder errors = new StringBuilder();
-            for (ConstraintViolation<User> violation : violations) {
-                errors.append(violation.getMessage()).append("<br>");
-            }
-            responseData.put("error", errors.toString());
-        } else if (userDao.findByUsername(username) != null) {
-            responseData.put("error", "Пользователь с таким именем уже существует.");
+        if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
+            responseData.put("error", "Имя пользователя и пароль не могут быть пустыми.");
         } else {
             try {
-                userDao.save(user);
-                responseData.put("redirect", "/index.html"); // Успешная регистрация, перенаправляем
+                Map<String, String> registerData = new HashMap<>();
+                registerData.put("username", username);
+                registerData.put("password", password);
+
+                String url = "http://go-data-service:8081/register";
+                String jsonResponse = HttpClientUtil.post(url, new Gson().toJson(registerData));
+
+                if (jsonResponse.contains("error")) {
+                    responseData.put("error", "Ошибка при регистрации: " + jsonResponse);
+                } else {
+                    responseData.put("redirect", "/index.html");
+                }
             } catch (Exception e) {
                 responseData.put("error", "Ошибка при регистрации: " + e.getMessage());
             }
         }
 
-        // Отправляем JSON-ответ
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         response.getWriter().write(new Gson().toJson(responseData));

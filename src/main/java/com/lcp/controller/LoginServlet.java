@@ -1,8 +1,7 @@
 package com.lcp.controller;
 
 import com.google.gson.Gson;
-import com.lcp.dao.UserDao;
-import com.lcp.model.User;
+import com.lcp.util.HttpClientUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -16,7 +15,6 @@ import java.util.Map;
 
 @WebServlet("/login")
 public class LoginServlet extends HttpServlet {
-    private UserDao userDao = new UserDao();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -29,19 +27,24 @@ public class LoginServlet extends HttpServlet {
             responseData.put("error", "Имя пользователя и пароль не могут быть пустыми.");
         } else {
             try {
-                User user = userDao.findByUsername(username);
-                if (user != null && userDao.checkPassword(password, user.getPassword())) {
-                    request.getSession().setAttribute("user", user);
-                    responseData.put("redirect", "/forms"); // Успешный вход, перенаправляем
-                } else {
+                Map<String, String> loginData = new HashMap<>();
+                loginData.put("username", username);
+                loginData.put("password", password);
+
+                String url = "http://go-data-service:8081/login";
+                String jsonResponse = HttpClientUtil.post(url, new Gson().toJson(loginData));
+
+                if (jsonResponse.contains("Invalid username or password")) {
                     responseData.put("error", "Неверное имя пользователя или пароль.");
+                } else {
+                    request.getSession().setAttribute("user", username);
+                    responseData.put("redirect", "/forms");
                 }
             } catch (Exception e) {
                 responseData.put("error", "Ошибка при входе: " + e.getMessage());
             }
         }
 
-        // Отправляем JSON-ответ
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         response.getWriter().write(new Gson().toJson(responseData));
