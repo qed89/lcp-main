@@ -36,12 +36,10 @@ public class RegisterServlet extends HttpServlet {
     
                 String url = "http://go-data-service:8081/register";
                 HttpResponse<String> httpResponse = HttpClientUtil.post(url, new Gson().toJson(registerData));
-
                 // Обрабатываем ответ в зависимости от кода состояния
                 if (httpResponse.statusCode() == 201) {
                     responseData.put("redirect", "/");
                 } else if (httpResponse.statusCode() == 409) {
-                    System.out.print("ASE 1 = " + httpResponse.body());
                     ApiError error = new Gson().fromJson(httpResponse.body(), ApiError.class);
                     responseData.put("error", error.getMessage());
                 } else {
@@ -51,13 +49,9 @@ public class RegisterServlet extends HttpServlet {
                 responseData.put("error", "Ошибка при регистрации: " + e.getMessage());
             }
         }
-        
-        response.setContentType("text/html");
+
+        response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
-        if (responseData.containsKey("error")) {
-            response.getWriter().write("<div class='alert alert-danger'>" + responseData.get("error") + "</div>");
-        } else if (responseData.containsKey("redirect")) {
-            response.getWriter().write("<script>window.location.href = '" + responseData.get("redirect") + "';</script>");
-        }
+        response.getWriter().write(new Gson().toJson(responseData));
     }
 }

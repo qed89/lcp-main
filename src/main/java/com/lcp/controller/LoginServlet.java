@@ -1,8 +1,9 @@
 package com.lcp.controller;
 
-import com.google.gson.Gson;
 import com.lcp.util.ApiError;
 import com.lcp.util.HttpClientUtil;
+
+import com.google.gson.Gson;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -35,10 +36,9 @@ public class LoginServlet extends HttpServlet {
 
                 String url = "http://go-data-service:8081/login";
                 HttpResponse<String> httpResponse = HttpClientUtil.post(url, new Gson().toJson(loginData));
-
                 // Обрабатываем ответ в зависимости от кода состояния
                 if (httpResponse.statusCode() == 200) {
-                    responseData.put("redirect", "/");
+                    responseData.put("redirect", "/forms");
                 } else if (httpResponse.statusCode() == 401) {
                     ApiError error = new Gson().fromJson(httpResponse.body(), ApiError.class);
                     responseData.put("error", error.getMessage());

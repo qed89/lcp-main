@@ -1,19 +1,19 @@
 package com.lcp.util;
 
 public class ApiError {
-    private final int code;
-    private final String message;
+    private int code;
+    private String message;
+
+    public ApiError() {}
 
     public ApiError(int code, String message) {
         this.code = code;
         this.message = message;
     }
 
-    public int getCode() {
-        return code;
-    }
+    public int getCode() { return code; }
+    public void setCode(int code) { this.code = code; }
 
-    public String getMessage() {
-        return message;
-    }
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
 }
